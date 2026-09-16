@@ -370,6 +370,11 @@ src_libdrivers_la_SOURCES += \
 	src/hardware/fluke-dmm/fluke-28x.c \
 	src/hardware/fluke-dmm/api.c
 endif
+if HW_FNIRSI_DLA16
+src_libdrivers_la_SOURCES += \
+	src/hardware/fnirsi-dla16/protocol.h \
+	src/hardware/fnirsi-dla16/api.c
+endif
 if HW_FTDI_LA
 src_libdrivers_la_SOURCES += \
 	src/hardware/ftdi-la/protocol.h \
