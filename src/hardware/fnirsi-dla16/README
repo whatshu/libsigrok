@@ -1,0 +1,75 @@
+FNIRSI DLA-16 (experimental)
+===========================
+
+This driver supports the 16-channel FNIRSI DLA-16 over libusb. No firmware
+upload is required. It does not implement DLA-32 or DLA-16 Plus support.
+The USB VID/PID 1a86:5537 belongs to a shared WCH interface and does not
+identify the model uniquely. Scanning requires an explicit conn=BUS.ADDRESS;
+automatic scans return no devices. Find the address with lsusb -d 1a86:5537
+and grant your user access to that USB device using your local policy.
+A global udev rule for this shared ID is intentionally not included.
+Replace 4.27 in the examples below with the actual bus and device address.
+
+Acquisition
+-----------
+
+The default mode is Buffer, at 50 MHz, with all 16 channels enabled.
+Stream requires a USB 3 connection. Maximum rates depend on the number
+of enabled channels:
+
+  Enabled channels    Buffer       Stream
+   1-2                1 GHz        1 GHz
+   3-4                1 GHz        500 MHz
+   5-8                1 GHz        250 MHz
+   9-16               500 MHz      125 MHz
+
+These are configuration limits, not a validation claim for every mode.
+Voltage thresholds are 0.6, 1.6 and 2.5 V. Basic single-channel, single-
+condition triggers support low, high, rising, falling and either edge.
+The exact trigger sample position has not been established. Multistage
+triggers and arbitrary pattern output are not supported.
+
+Examples:
+
+  sigrok-cli -d fnirsi-dla16:conn=4.27 -C D0,D1 \
+    -c device_mode=Buffer:samplerate=200m --samples 100000 -o capture.sr
+
+  sigrok-cli -d fnirsi-dla16:conn=4.27 -C D0,D1 \
+    -c device_mode=Stream:samplerate=1g --samples 100000 -o stream.sr
+
+PWM0 and PWM1 channel groups expose enabled, output_frequency and
+output_duty_cycle settings. Outputs remain active until disabled:
+
+  sigrok-cli -d fnirsi-dla16:conn=4.27 --channel-group PWM0 \
+    -c output_frequency=1000000:output_duty_cycle=50:enabled=on --set
+  sigrok-cli -d fnirsi-dla16:conn=4.27 --channel-group PWM0 -c enabled=off --set
+
+For older PulseView versions that do not handle a mixed logic-analyzer
+and signal-generator device, FNIRSI_DLA16_LOGIC_ONLY=1 selects a logic-
+only profile. This hides the PWM groups, uses data_source for Buffer/
+Stream selection and limits the advertised sample count to 100 million.
+
+Validation and limitations
+--------------------------
+
+Linux hardware checks on 2026-09-15 covered 60-second Stream reception
+at 2 channels / 1 GHz, 4 / 500 MHz, 8 / 250 MHz and 16 / 125 MHz through
+sigrok-cli with null output. A separate raw USB probe saved about 15 GB
+per configuration at about 250 MB/s. The raw-probe result does not prove
+live .sr compression at those rates. Known PWM signals were connected
+only to D0 and D1; other channels were enabled but not individually
+verified with independent signals. Byte counts and short waveform
+windows do not establish sample-perfect continuity over a whole run.
+
+Buffer captures were checked at 16 channels / 50 MHz and 2 channels /
+200 MHz and 1 GHz. Basic trigger checks included positive and negative
+controls at 200 MHz. PWM output was observed up to 20 MHz; its duty
+cycle and the acquisition timebase were not independently calibrated.
+Other operating systems and hardware revisions remain untested.
+
+The protocol reference is the GPL-3.0 PXView DLA-32 overlay:
+https://github.com/TechBirdCompany/PXView-DLA32-overlay
+Reference revision: b6fc4e7c075b4553248c78ed5b3c55bcee461410.
+Command framing and CRC were independently checked against factory
+DLA-Logic 1.0.3. The tests cover captured command vectors, the 64-bit
+sample count, bit ordering, sparse masks and Buffer/Stream framing.
