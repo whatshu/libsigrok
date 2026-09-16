@@ -836,7 +836,6 @@ mimeiconscalabledir = $(datadir)/icons/hicolor/scalable/mimetypes
 mimeiconscalable_DATA = contrib/libsigrok.svg
 
 EXTRA_DIST = \
-	src/hardware/fnirsi-dla16/README \
 	Doxyfile \
 	HACKING \
 	README.devices \
@@ -894,7 +893,8 @@ tests_main_SOURCES = \
 	tests/device.c \
 	tests/trigger.c \
 	tests/analog.c \
-	tests/conv.c
+	tests/conv.c \
+	tests/fnirsi_dla16.c
 
 tests_main_LDADD = libsigrok.la $(SR_EXTRA_LIBS) $(TESTS_LIBS)
 
